@@ -10,9 +10,8 @@ import {
   select,
   take,
 } from "redux-saga/effects";
-import { EventChannel, buffers } from "redux-saga";
+import { buffers } from "redux-saga";
 import { closeChannel, subscribe } from "./channel";
-import { RootState } from "../redux";
 import * as TimerActions from "../redux/timer";
 
 const getTimerFromStore = (state) => state.timer;
@@ -23,7 +22,7 @@ export function* start() {
 export function* watcher() {
   while (yield take(TimerActions.watch)) {
     try {
-      yield put(TimerActions.setStatus({ status: "play" }));
+      yield put(TimerActions.setStatus("play"));
       const worker = yield fork(connectChannel);
       yield take(TimerActions.stop);
       yield cancel(worker);
@@ -31,8 +30,8 @@ export function* watcher() {
       console.error(error);
     } finally {
       yield all([
-        put(TimerActions.setStatus({ status: "stop" })),
-        put(TimerActions.setCount({ count: 0 })),
+        put(TimerActions.setStatus("stop")),
+        put(TimerActions.setCount(0)),
       ]);
     }
   }
@@ -42,23 +41,26 @@ function* connectChannel() {
   try {
     const timer = 10;
     const buffer = buffers.sliding(1);
-
     const param = { buffer, timer };
     channel = yield call(subscribe, param);
-
+    let timeTemp = null; //이전 시각
     while (true) {
-      const message = yield flush(channel);
+      let now = Date.now(); //현재 시각
+      let interval = timeTemp ? now - timeTemp : 0;
+      timeTemp = now;
+      yield flush(channel);
       const store = yield select(getTimerFromStore);
-      yield put(TimerActions.setCount({ count: store.count + 1 }));
+      yield put(TimerActions.setCount(store.count + interval));
+      // eslint-disable-next-line no-unused-vars
       const { timeout, pause } = yield race({
         timeout: delay(timer),
         pause: take(TimerActions.pause),
       });
-
       if (pause) {
-        yield put(TimerActions.setStatus({ status: "pause" }));
+        yield put(TimerActions.setStatus("pause"));
+        timeTemp = null;
         yield take(TimerActions.restart);
-        yield put(TimerActions.setStatus({ status: "play" }));
+        yield put(TimerActions.setStatus("play"));
       }
     }
   } catch (error) {

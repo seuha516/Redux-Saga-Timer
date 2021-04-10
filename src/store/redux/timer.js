@@ -34,11 +34,11 @@ const initialState = {
 const status = handleActions(
   {
     [SET_STATUS]: (state, action) => {
-      const { status } = action.payload;
+      const status = action.payload;
       return { ...state, status };
     },
     [SET_COUNT]: (state, action) => {
-      const { count } = action.payload;
+      const count = action.payload;
       return { ...state, count };
     },
   },

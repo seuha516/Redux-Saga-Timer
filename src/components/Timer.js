@@ -60,7 +60,7 @@ const Button = styled.div`
   justify-content: center;
   cursor: pointer;
   background: rgba(158, 206, 255, 0.6);
-  transition: transform 0.3s;
+  transition: all 0.3s;
   &:hover {
     transform: translate(0, -5px);
   }
@@ -100,9 +100,11 @@ const buttonComponent = {
 };
 const toMMSSSS = (time) => {
   const format = (num) => (num < 10 ? `0${num}` : String(num));
-  const minutes = Math.floor(time / 6000);
-  const seconds_front = Math.floor((time - minutes * 6000) / 100);
-  const seconds_back = time - minutes * 6000 - seconds_front * 100;
+  const minutes = Math.floor(time / 60000);
+  const seconds_front = Math.floor((time - minutes * 60000) / 1000);
+  const seconds_back = Math.floor(
+    (time - minutes * 60000 - seconds_front * 1000) / 10
+  );
   return `${format(minutes)}:${format(seconds_front)}.${format(seconds_back)}`;
 };
 
@@ -111,7 +113,7 @@ const Timer = () => {
   const count = useTimer("count");
   const timerActions = useTimerActions();
 
-  const [buttonList, setButtonList] = useState(["play", "refresh"]);
+  const [buttonList, setButtonList] = useState(["play"]);
 
   const handleClick = (type) => {
     switch (type) {
@@ -143,6 +145,7 @@ const Timer = () => {
         break;
       case "stop":
         _buttonList.unshift("play");
+        _buttonList.pop();
         break;
       default:
         console.log(status);
